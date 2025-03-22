@@ -47,7 +47,6 @@ I2C_HandleTypeDef hi2c1;
 /* USER CODE BEGIN PV */
 volatile float temp;
 volatile uint8_t flag_adc = 0;
-volatile uint8_t flag_bt = 0;
 volatile uint8_t idx = 1;
 volatile float sum_temp = 0;
 /* USER CODE END PV */
@@ -65,11 +64,6 @@ static void MX_I2C1_Init(void);
 /* USER CODE BEGIN 0 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 	flag_adc = 1;
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if(GPIO_Pin == GPIO_PIN_1) flag_bt == 1;
-	if(GPIO_Pin == GPIO_PIN_0) flag_bt == 2;
 }
 
 void Sensor_temp() {
@@ -93,16 +87,17 @@ void Sensor_temp() {
 			sum_temp = 0;
 		}
 
-		if(flag_bt == 1) {
-			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4); // buzzer
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, 0); // led
+		if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == 1) {
+			while(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == 1) {}
+			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
+			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
 			HAL_Delay(500);
-		} else {
-			if(temp > 30) {
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, 1);
-				HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_5);
-				HAL_Delay(100);
-			}
+			temp = 0;
+		}
+		if(temp > 30) {
+			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
+			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_5);
+			HAL_Delay(100);
 		}
 		flag_adc = 0;
 		HAL_ADC_Start_IT(&hadc1);
